@@ -112,44 +112,183 @@ Hơn nữa, bạn phải đảm bảo rằng các tên sau đây hoàn toàn gi�
 
 # Master Setup
 
+- Cách cài đặt một nút chính trung tâm bằng lệnh `node wizard`.
+
+- Chạy lệnh CLI `node wizard`. Trước đó, hãy đảm bảo thu thập thông tin cần thiết:
+
+| Tham số |	Miêu tả |
+| -- | -- |
+| Tên thường gọi (CN)	| Yêu cầu. Theo quy ước, đây phải là FQDN của máy chủ. Mặc định là FQDN. |
+| Master zone name |	(Không bắt buộc) Cho phép chỉ định tên vùng master. Mặc định là master |
+| Global zones	| (Không bắt buộc) Cho phép chỉ định nhiều zone global hơn ngoài global-templates và director-global. Mặc định là `N`. |
+| API bind host |	(Không bắt buộc) Cho phép chỉ định địa chỉ mà ApiListener bị ràng buộc. Chỉ dành cho mục đích sử dụng nâng cao. |
+| API bind port |	(Không bắt buộc) Cho phép chỉ định cổng mà ApiListener bị ràng buộc. Chỉ để sử dụng nâng cao (cổng mặc định 5665). |
+| Disable conf.d |	(Không bắt buộc) Cho phép vô hiệu hóa include_recursive "conf.d"chỉ thị ngoại trừ tệp api-users.conf trong tệp icinga2.conf. Mặc định là `Y`. |
+
+
+Trình hướng dẫn thiết lập sẽ đảm bảo rằng các bước sau được thực hiện:
+
+
+<ul>
+  <ul>
+  <li> Bật tính năng api.
+  <li> Tạo một tổ chức phát hành chứng chỉ (CA) mới /var/lib/icinga2/ca nếu nó không tồn tại.
+  <li> Tạo chứng chỉ cho nút này được ký bởi khóa CA.
+  <li> Cập nhật tệp zone.conf với cấu trúc phân cấp vùng mới.
+  <li> Cập nhật cấu hình ApiListener và hằng số .
+  <li> Cập nhật icinga2.conf để tắt tệp conf.d và thêm tệp api-users.conf.
 
 
 
+# Signing Certificates on the Master 
+
+- Tất cả các chứng chỉ phải được ký bởi cùng một tổ chức phát hành chứng chỉ (CA). Điều này đảm bảo rằng tất cả các nút tin cậy lẫn nhau trong một môi trường giám sát phân tán.
+
+- CA này được tạo trong quá trình thiết lập chính và phải giống nhau trên tất cả các phiên bản chính.
+
+- Bạn có thể tránh ký và triển khai chứng chỉ theo cách thủ công bằng cách sử dụng các phương pháp tích hợp sẵn cho các yêu cầu ký chứng chỉ tự động ký (CSR):
+
+    <ul>
+      <ul>
+    <li> CSR Auto-Signing  sử dụng vé máy khách (đại lý hoặc vệ tinh) được tạo trên thẻ chính làm định danh tin cậy.
+    <li> On-Demand CSR Signing cho phép ký các yêu cầu chứng chỉ đang chờ xử lý trên bản chính.
+      </ul>
+    </ul>
+
+### CSR Auto-Signing 
+
+- Một client có thể là master, satellite hoặc agent. Nó gửi một yêu cầu ký chứng chỉ (CSR) và phải tự xác thực theo cách đáng tin cậy. Master tạo một thẻ khách hàng được bao gồm trong yêu cầu này. Bằng cách đó, tổng thể có thể xác minh rằng yêu cầu khớp với vé tin cậy trước đó và ký vào yêu cầu.
+
+Ưu điểm:
+
+- Các nút (master, satellite, agent) có thể được cài đặt bởi những người dùng khác nhau đã nhận được ticket client.
+- Không cần tương tác thủ công trên nút master.
+
+Nhược điểm:
+
+- Các ticket cần được tạo trên master và được sao chép vào các trình wizard của client.
+- Không trung tâm quản lý chữ ký.
+    
+### SCR Auto-Signing : Chuẩn bị
+- Trước khi sử dụng chế độ này, hãy đảm bảo rằng các bước sau được thực hiện ký trên master:
+
+   <ul>
+     <ul>
+      <li> Thiết lập master đã được chạy thành công. Điêu nay bao gôm:(Đã tạo một cặp khóa CA), (Đã tạo salt ticket bí mật được lưu trữ trong hằng số TicketSalt , được đặt làm thuộc tính ticket_salt bên trong tính năng api .)
+      <li> Khởi động lại cá thể chính.
+     </ul>
+   </ul>
+    
+### CSR Auto-Signing: On the master
+    
+- Trình wizard cho các nút satellite/agent sẽ yêu cầu bạn cung cấp ticket client.
+
+- Có hai cách có thể để lấy lại ticket:
+
+       <ul>
+     <ul>
+      <li> Lệnh CLI được thực thi trên nút master.
+      <li> Yêu cầu API REST đối với nút master.
+     </ul>
+   </ul>
+
+- Thông tin bắt buộc
+    
+| Parameter	| Description |
+| -- | -- |
+| Common name (CN) |	Required. The common name for the agent/satellite. By convention this should be the FQDN. |
+    
+    
+- Tạo một ticket trên nút master(master1) cho agent(agent1):
+
+```sh
+  [root@master1 /]# icinga2 pki ticket --cn "agent1"
+```
+- Truy vấn Icinga2 API trên master yêu cầu đối tượng ApiUser có ít nhất quyền actions/generate-ticket.
+
+```sh
+    [root@master1 /]# vim /etc/icinga2/conf.d/api-users.conf
+
+object ApiUser "client-pki-ticket" {
+  password = "bea11beb7b810ea9ce6ea" //change this
+  permissions = [ "actions/generate-ticket" ]
+}
+
+[root@icinga2-master1 /]# systemctl restart icinga2
+
+Retrieve the ticket on the master node `icinga2-master1.localdomain` with `curl`, for example:
+
+ [root@master1 /]# curl -k -s -u client-pki-ticket:bea11beb7b810ea9ce6ea -H 'Accept: application/json' \
+ -X POST 'https://localhost:5665/v1/actions/generate-ticket' -d '{ "cn": "icinga2-agent1.localdomain" }'
+ ```
+
+- Lưu trữ ticket đó cho satellite/agent để thiết lập sau này.
 
 
 
+### On-Demand CSR Signing
 
+.....................
+    
+    
+    
+# Agent/Satellite Setup
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- Tạo một vé trên nút master(master1) cho agent(agent1):
+ ```sh
+[root@master1 /]# icinga2 pki ticket --cn "agent1"
+4f75d2ecd253575fe9180938ebff7cbca262f96e
+```
+- Chạy "node wizard" và nhập theo yêu cầu
+    
+    ```sh
+    [root@agent1 /]# icinga2 node wizard
+    ```
+    
+<ul>
+  <ul>
+    <li> Common name (CN)
+    <li>  Master/Satellite Common Name
+    <li> Master/Satellite endpoint host
+    <li> Master/Satellite endpoint port
+    <li> Ticket 
+  </ul>
+  </ul>
+        
+ - Restart dịch vụ icinga2
+    
+```sh
+[root@agent1 /]# systemctl restart icinga2
+```
+      
+- Tổng quan về tất cả các thông số:
+    
+| Tham số | Mô tả |
+|  -- | -- |
+| Common name (CN)	| Yêu cầu. Theo quy ước, đây phải là FQDN của máy chủ. Mặc định là FQDN. |
+| Master common name	| Yêu cầu. Sử dụng tên chung mà bạn đã chỉ định cho nút chính của mình trước đây. |
+| Establish connection to the parent node	| Không bắt buộc. Liệu nút có cố gắng kết nối với nút cha hay không. Mặc định là y. |
+| Master/Satellite endpoint host |	Bắt buộc nếu đại lý cần kết nối với tổng thể / vệ tinh. Địa chỉ IP của điểm cuối chính hoặc FQDN. Thông tin này được bao gồm trong Endpointcấu hình đối tượng trong zones.conftệp. |
+| Master/Satellite endpoint port	| Tùy chọn nếu đại lý cần kết nối với chính / vệ tinh. Cổng lắng nghe của thiết bị đầu cuối chính. Thông tin này được bao gồm trong Endpointcấu hình đối tượng. |
+| Add more master/satellite endpoints	| Không bắt buộc. Nếu bạn đã định cấu hình nhiều nút chính / nút vệ tinh, hãy thêm chúng vào đây. |
+| Parent Certificate information	| Yêu cầu. Xác minh rằng máy chủ kết nối thực sự là nút chính được yêu cầu. |
+| Request ticket	| Không bắt buộc. Thêm vé được tạo trên cái chính. |
+| API bind host	| Không bắt buộc. Cho phép chỉ định địa chỉ mà ApiListener bị ràng buộc. Chỉ dành cho mục đích sử dụng nâng cao. |
+| API bind port	| Không bắt buộc. Cho phép chỉ định cổng mà ApiListener bị ràng buộc. Chỉ để sử dụng nâng cao (yêu cầu thay đổi cổng mặc định 5665 ở mọi nơi). |
+| Accept config	| Không bắt buộc. Liệu nút này có chấp nhận đồng bộ cấu hình từ nút chính (bắt buộc đối với chế độ đồng bộ cấu hình ) hay không. Vì lý do bảo mật , điều này được mặc định thành n. |
+| Accept commands	| Không bắt buộc. Liệu nút này có chấp nhận thông báo thực thi lệnh từ nút chính hay không (bắt buộc đối với chế độ điểm cuối lệnh ). Vì lý do bảo mật , điều này được mặc định thành n. |
+| Local zone name	| Không bắt buộc. Cho phép chỉ định tên cho vùng cục bộ. Điều này rất hữu ích khi trường hợp này là một vệ tinh, không phải một tác nhân. Mặc định là FQDN.  |
+| Parent zone name	| Không bắt buộc. Cho phép chỉ định tên cho vùng mẹ. Điều này quan trọng nếu tác nhân có một cá thể vệ tinh là mẹ, không phải là chính. Mặc định là master. |
+| Global zones	| Không bắt buộc. Cho phép chỉ định nhiều khu vực toàn cầu hơn ngoài global-templatesvà director-global. Mặc định là n. |
+| Disable conf.d	| Không bắt buộc. Cho phép vô hiệu hóa việc bao gồm thư mục conf.dchứa cấu hình ví dụ cục bộ. Khách hàng nên truy xuất cấu hình của họ từ nút cha hoặc hoạt động như cầu nối thực thi điểm cuối lệnh. Mặc định là y. |
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
 

@@ -185,7 +185,7 @@ Nhược điểm:
 
 - Có hai cách có thể để lấy lại ticket:
 
-       <ul>
+ <ul>
      <ul>
       <li> Lệnh CLI được thực thi trên nút master.
       <li> Yêu cầu API REST đối với nút master.

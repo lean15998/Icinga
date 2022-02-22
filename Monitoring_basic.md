@@ -181,7 +181,11 @@ object CheckCommand "my-ping" {
 
 ```
 
-# 4. Apply Rules
+# 4. Runtime macro
+
+
+
+# 5. Apply Rules
 
 
 ###  Giám sát tất cả các host có host.address được chỉ định
@@ -267,7 +271,7 @@ object Host "host1" {
 ```
 
 
-# 5. Groups
+# 6. Groups
  - Tập hợp các đối tượng giống nhau
 
 ```sh
@@ -336,8 +340,126 @@ object HostGroup "prod-mssql" {
 
  Tất cả các host có thuộc tính `mssql_port` sẽ được thêm làm thành viên của hostgroup `mssql`. Tuy nhiên, tất cả các host phù hợp với chuỗi thuộc tính `internal` hoặc với `test_server` không được thêm vào nhóm này.
 
-# 6. Thông báo
+# 7. Thông báo
 
+- Thông báo cho các vấn đề về service và host là một phần không thể thiếu trong thiết lập giám sát.
+- Khi service và host đang gặp sự cố thì thông báo sẽ được gửi đến cho người dùng.
+- Có nhiều cách để gửi thông báo, ví dụ như qua email, XMPP, IRC, Twitter, v.v. .Icinga2 không biết cách gửi thông báo. Thay vào đó, nó dựa vào các cơ chế bên ngoài như shell script để thông báo cho người dùng.
+
+```sh
+object User "icingaadmin" {
+  display_name = "Icinga 2 Admin"
+  enable_notifications = true
+  states = [ OK, Warning, Critical ]
+  types = [ Problem, Recovery ]
+  email = "icinga@localhost"
+}
+```
+
+- User `icingaadmin` trong ví dụ dưới đây sẽ chỉ nhận được thông báo về các trạng thái `Warning` và `Critical`. Thêm vào đó các Recovery thông báo được gửi .
+- Nếu không set `states` và `types` thì tất cả các thông báo về trạng thái sẽ được gửi.
+
+- Ví dụ một notification template 
+
+```sh
+template Notification "generic-notification" {
+  interval = 15m
+
+  command = "mail-service-notification"
+
+  states = [ Warning, Critical, Unknown ]
+  types = [ Problem, Acknowledgement, Recovery, Custom, FlappingStart,
+            FlappingEnd, DowntimeStart, DowntimeEnd, DowntimeRemoved ]
+
+  period = "24x7" //Khoảng thơi gian 24*7
+}
+```
+
+- Apply keyword tạo notification cho service
+
+```sh
+apply Notification "notify-cust-xy-mysql" to Service {
+  import "generic-notification"
+  users = [ "noc-xy", "mgmt-xy" ]
+  assign where match("*has gold support 24x7*", service.notes) && (host.vars.customer == "customer-xy" || host.vars.always_notify == true
+  ignore where match("*internal", host.name) || (service.vars.priority < 2 && host.vars.is_clustered == true)
+}
+```
+
+### Thông báo : User từ host/service
+
+ - Sử dụng các quy tắc `mail` và `sms` cho các đối tượng khác nhau
+
+```sh
+
+object Host "icinga2-agent1.localdomain" {
+  [...]
+
+  vars.notification["mail"] = {
+    groups = [ "icingaadmins" ]
+    users = [ "icingaadmin" ]
+  }
+  vars.notification["sms"] = {
+    users = [ "icingaadmin" ]
+  }
+}
+```
+
+- Sử dụng chi tiết hơn trên service
+
+```sh
+apply Service "http" {
+  [...]
+
+  vars.notification["mail"] = {
+    groups = [ "icingaadmins" ]
+    users = [ "icingaadmin" ]
+  }
+
+  [...]
+}
+```
+- Dịch vụ thông báo chó user và group được kế thừa từ service và nếu không được thiết lập, từ host. Người dùng mặc định cũng được đặt.
+
+
+```sh
+apply Notification "mail-service-notification" to Service {
+  [...]
+
+  if (service.vars.notification.mail.users) {
+    users = service.vars.notification.mail.users
+  } else if (host.vars.notification.mail.users) {
+    users = host.vars.notification.mail.users
+  } else {
+    /* Default user who receives everything. */
+    users = [ "icingaadmin" ]
+  }
+
+  if (service.vars.notification.mail.groups) {
+    user_groups = service.vars.notification.mail.groups
+  } else if (host.vars.notification.mail.groups) {
+    user_groups = host.vars.notification.mail.groups
+  }
+
+  assign where ( host.vars.notification.mail && typeof(host.vars.notification.mail) == Dictionary ) || ( service.vars.notification.mail && typeof(service.vars.notification.mail) == Dictionary )
+}
+```
+
+### Độ trễ thông báo và thời gian re-notification
+
+```sh
+apply Notification "mail" to Service {
+  import "generic-notification"
+
+  command = "mail-notification"
+  users = [ "icingaadmin" ]
+
+  interval = 5m  // time renotification
+  
+  times.begin = 15m // delay notification window
+
+  assign where service.name == "ping4"
+}
 
 
 

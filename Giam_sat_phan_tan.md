@@ -239,7 +239,7 @@ Retrieve the ticket on the master node `icinga2-master1.localdomain` with `curl`
 [root@master1 /]# icinga2 pki ticket --cn "agent1"
 4f75d2ecd253575fe9180938ebff7cbca262f96e
 ```
-- Chạy "node wizard" và nhập theo yêu cầu
+- Chạy "node wizard" và nhập theo yêu cầu các thông số sau
     
     ```sh
     [root@agent1 /]# icinga2 node wizard

@@ -148,8 +148,8 @@ Trình hướng dẫn thiết lập sẽ đảm bảo rằng các bước sau đ
 
 - Bạn có thể tránh ký và triển khai chứng chỉ theo cách thủ công bằng cách sử dụng các phương pháp tích hợp sẵn cho các yêu cầu ký chứng chỉ tự động ký (CSR):
 
-    <ul>
-      <ul>
+ <ul>
+ <ul>
     <li> CSR Auto-Signing  sử dụng vé máy khách (đại lý hoặc vệ tinh) được tạo trên thẻ chính làm định danh tin cậy.
     <li> On-Demand CSR Signing cho phép ký các yêu cầu chứng chỉ đang chờ xử lý trên bản chính.
       </ul>

@@ -282,9 +282,21 @@ Retrieve the ticket on the master node `icinga2-master1.localdomain` with `curl`
 | Global zones	| Không bắt buộc. Cho phép chỉ định nhiều khu vực toàn cầu hơn ngoài global-templatesvà director-global. Mặc định là n. |
 | Disable conf.d	| Không bắt buộc. Cho phép vô hiệu hóa việc bao gồm thư mục conf.dchứa cấu hình ví dụ cục bộ. Khách hàng nên truy xuất cấu hình của họ từ nút cha hoặc hoạt động như cầu nối thực thi điểm cuối lệnh. Mặc định là y. |
       
+ - Đảm bảo rằng các bước sau được thực hiện:
+    <ul>
+      <ul>
+        <li> Bật tính năng api.
+         <li> Tạo yêu cầu ký chứng chỉ (CSR) cho nút local.
+          <li> Yêu cầu chứng chỉ đã ký (tùy chọn với số vé được cung cấp) trên nút master.
+           <li> Cho phép xác minh chứng chỉ của nút cha.
+            <li> Lưu trữ chứng chỉ satellite/agent đã ký và ca.crt vào /var/lib/icinga2/certs.
+            <li> Cập nhật tệp  zones.conf với hệ thống phân cấp zone mới.
+            <li> Cập nhật /etc/icinga2/features-enabled/api.conf( accept_config, accept_commands) và constants.conf.
+            <li> Cập nhật /etc/icinga2/icinga2.conf và comment include_recursive "conf.d".
+      </ul>
+    </ul>
       
-      
-      
+      Bạn có thể kiểm tra các tệp chứng chỉ được lưu trữ trong thư mục `/var/lib/icinga2/certs`.
       
       
       

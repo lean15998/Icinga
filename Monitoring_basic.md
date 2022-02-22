@@ -183,7 +183,81 @@ object CheckCommand "my-ping" {
 
 # 4. Runtime macro
 
+### Host Runtime Macros
 
+| Name | 	Description |
+| -- | -- |
+| host.name	| Tên của host object |
+| host.display_name |	Giá trị của thuộc tính display_name |
+| host.state |	Trạng thái hiện tại của host. Có thể là UNREACHABLE, UP hoặc DOWN |
+| host.state_id	| ID trạng thái hiện tại của host. Có thể là một trong 0(UP), 1(DOWN) và 2(UNREACHABLE) |
+| host.state_type |	Loại trạng thái hiện tại của host. Có thể là SOFT hoặc HARD |
+| host.check_attempt |	Số lần kiểm tra hiện tại |
+| host.max_check_attempts	| Số lần kiểm tra tối đa được thực hiện trước khi chuyển sang trạng thái HARD |
+| host.last_state	| Trạng thái trước đó của host. Có thể là UNREACHABLE, UP hoặc DOWN |
+| host.last_state_id | ID trạng thái trước đó của host. Có thể là 0(UP), 1(DOWN) và 2(ỦNEACHABLE) |
+| host.last_state_type | Loại trạng thái trước đó của host. Có thể là SOFT hoặc HARD |
+| host.last_state_change |	Dấu thời gian của thay đổi trạng thái cuối cùng |
+| host.downtime_depth	| Số lần ngừng hoạt động |
+| host.duration_sec |	Thời gian kể từ lần thay đổi trạng thái cuối cùng |
+| host.latency	| Độ trễ kiểm tra của host |
+| host.execution_time	| Thời gian thực hiện execution của host |
+| host.output	| Đầu ra của check |
+| host.perfdata |	Dữ liệu hiệu suất của lần kiểm tra cuối cùng |
+| host.last_check	 | Dấu thời gian khi lần kiểm tra cuối cùng được thực hiện |
+| host.check_source |	Phiên bản giám sát thực hiện lần kiểm tra cuối cùng |
+| host.num_services	| Số lượng dịch vụ được liên kết với host |
+| host.num_services_ok	| Số lượng dịch vụ được liên kết với máy chủ đang ở trạng thái OK |
+| host.num_services_warning |	Số lượng dịch vụ được liên kết với máy chủ đang ở trạng thái WARNING |
+| host.num_services_unknown	 | Số lượng dịch vụ được liên kết với máy chủ đang ở trạng tháiUNKNOWN |
+| host.num_services_critical	|  lượng dịch vụ được liên kết với máy chủ đang ở trạng thái CRITICAL |
+
+
+
+### Service Runtime Macros
+
+|Name	| Description |
+| -- | -- |
+| service.name |	The short name of the service object |
+| service.display_name	| The value of the display_name attribute |
+| service.check_command	| The short name of the command along with any arguments to be used for the check |
+| service.state	| The service’s current state. Can be one of OK, WARNING, CRITICAL and UNKNOWN |
+| service.state_id	| The service’s current state. Can be one of 0 (ok), 1 (warning), 2 (critical) and 3 (unknown) |
+| service.state_type |	The service’s current state type. Can be one of SOFT and HARD |
+| service.check_attempt |	The current check attempt number |
+| service.max_check_attempts |	The maximum number of checks which are executed before changing to a hard state |
+| service.last_state |	The service’s previous state. Can be one of OK, WARNING, CRITICAL and UNKNOWN |
+| service.last_state_id |	The service’s previous state. Can be one of 0 (ok), 1 (warning), 2 (critical) and 3 (unknown) |
+| service.last_state_type |	The service’s previous state type. Can be one of SOFT and HARD |
+| service.last_state_change |	The last state change’s timestamp |
+| service.downtime_depth |	The number of active downtimes |
+| service.duration_sec |	The time since the last state change |
+| service.latency	| The service’s check latency |
+| service.execution_time |	The service’s check execution time |
+| service.output	| The last check’s output |
+| service.perfdata	| The last check’s performance data |
+| service.last_check	| The timestamp when the last check was executed |
+| service.check_source	| The monitoring instance that performed the last check |
+
+### Command Runtime Macros
+
+| Name |	Description
+| -- | -- |
+| command.name	| The name of the command object |
+
+### User Runtime Macros 
+
+| Name	| Description |
+| -- |  --- |
+| user.name |	The name of the user object |
+| user.display_name	| The value of the display_name attribute |
+
+### Notification Runtime Macros 
+
+| Name	| Description |
+| notification.type	| The type of the notification. |
+| notification.author	| The author of the notification comment if existing. |
+| notification.comment	| The comment of the notification if existing. |
 
 # 5. Apply Rules
 
@@ -462,6 +536,9 @@ apply Notification "mail" to Service {
 }
 
 
+```
+# 8.Commands
 
+- icinga2 sử dụng 3 loại lệnh khác nhau để tiến hành kiểm tra
 
-
+### CheckCommand

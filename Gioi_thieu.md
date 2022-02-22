@@ -16,7 +16,7 @@
 </ul>
 
 
-<img src="">
+<img src="https://github.com/lean15998/Icinga/blob/main/image/1.01.png">
 
 # 2. Cài đặt
 

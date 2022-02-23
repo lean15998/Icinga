@@ -308,7 +308,8 @@ Retrieve the ticket on the master node `icinga2-master1.localdomain` with `curl`
 
 - Mỗi endpoint đều có check queue từ xa của riêng nó. Số lượng kiểm tra được thực hiện đồng thời có thể bị giới hạn trên endpoint với hằng số `MaxConcurrentChecks` được xác định trong file  `constants.conf` . Icinga 2 có thể hủy yêu cầu kiểm tra nếu check queue từ xa đã đầy.
 
-<img src = "">
+<img src= "https://github.com/lean15998/Icinga/blob/main/image/4.0.4.png" >
+
 
 - Ưu điểm:
 <ul>
@@ -441,7 +442,9 @@ object CheckCommand "my-cmd" {
     ### Top Down Config Sync
     
 - Đồng bộ hóa các tệp cấu hình đối tượng trong các vùng được chỉ định. Nó rất hữu ích nếu bạn muốn định cấu hình mọi thứ trên nút master và đồng bộ hóa các satellite check (disk, memory, v.v.). Các satellite chạy  local schedule của riêng chúng và sẽ gửi lại thông báo kết quả kiểm tra cho master.
-    
+  
+ <img src= "https://github.com/lean15998/Icinga/blob/main/image/4.05.png" >
+
 - Ưu điểm:
 <ul>
   <ul>

@@ -396,11 +396,11 @@ object Host "agent" {
 }
 ```
 
-- Thêm plugin check RAM và CPU
+## 6.Thêm plugin giám sát
 
 - Tải plugin trên mạng và lưu vào thư mục `/usr/lib/nagios/plugins/`
 
-- Thêm cấu hình Checkcommand
+- Thêm cấu hình Checkcommand trên node `master`
 
 ```sh
 root@quynv:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.
@@ -415,19 +415,7 @@ object CheckCommand "cpu" {
 
 }
 ```
-
-```sh
-root@agent:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.conf
-object CheckCommand "mem" {
-        command = [ PluginDir + "/check_mem.pl", "-f", "-c 10" , "-w 20" ]
-
-}
-
-object CheckCommand "cpu" {
-        command = [ PluginDir + "/check_cpu", "-c 20" , "-w 10" ]
-
-}
-```
+- Thêm cấu hình service vào file cấu hình
 
 ```sh
 root@quynv:~# vim /etc/icinga2/zones.d/satelite/services.conf
@@ -447,6 +435,8 @@ apply Service "Cpu" {
 }
 
 ```
+
+- Kiểm tra cấu hình và khởi động lại icinga2
 
 ```sh
 root@quynv:~# icinga2 daemon -C
@@ -470,6 +460,8 @@ root@quynv:~# icinga2 daemon -C
 [2022-02-23 10:13:20 +0000] information/cli: Finished validating the configuration file(s).
 root@quynv:~# systemctl restart icinga2.service
 ```
+
+- Kiểm tra trên dashboard
 
 <img src = "https://github.com/lean15998/Icinga/blob/main/image/5.02.PNG">
 

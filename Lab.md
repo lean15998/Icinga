@@ -204,6 +204,110 @@ object ApiListener "api" {
 ```
 
 
+## Tạo file cấu hình
+
+
+
+```sh
+root@quynv:~# vim /etc/icinga2/zones.conf
+
+object Endpoint "quynv" {
+}
+
+object Zone "master" {
+        endpoints = [ "quynv" ]
+}
+
+object Zone "global-templates" {
+        global = true
+}
+
+object Zone "director-global" {
+        global = true
+}
+
+object Zone "satellite" {
+  endpoints = [ "satellite" ]
+  parent = "master"
+}
+
+
+object Endpoint "satellite" {
+  host = "10.0.0.52"
+  log_duration = 0 // Disable the replay log for command endpoint agents
+}
+
+```
+
+```sh
+root@quynv:~# mkdir -p /etc/icinga2/zones.d/satellite
+root@quynv:~# cd /etc/icinga2/zones.d/satellite/
+root@quynv:/etc/icinga2/zones.d/satellite# vim hosts.conf
+
+object Host "agent" {
+  check_command = "hostalive"
+  address = "10.0.0.53"
+  vars.agent_endpoint = name
+}
+```
+```sh
+root@quynv:/etc/icinga2/zones.d/satellite# vim agent.conf
+object Zone "agent" {
+  endpoints = [ "agent" ]
+  parent = "satellite"
+}
+
+object Endpoint "agent" {
+  host = "10.0.0.53"
+  log_duration = 0 // Disable the replay log for command endpoint agents
+}
+```
+
+```sh
+root@quynv:/etc/icinga2/zones.d/satellite# vim service.conf
+apply Service "ping4" {
+  check_command = "ping4"
+  assign where host.zone == "satellite" && host.address
+}
+
+apply Service "disk" {
+  check_command = "disk"
+  // Execute the check on the remote command endpoint
+  command_endpoint = host.vars.agent_endpoint
+
+  // Assign the service onto an agent
+  assign where host.zone == "satellite" && host.address
+}
+
+apply Service "Memory" {
+  check_command = "mem"
+  command_endpoint = host.vars.agent_endpoint
+  assign where host.zone == "satellite" && host.address
+}
+
+apply Service "Cpu" {
+  check_command = "cpu"
+  command_endpoint = host.vars.agent_endpoint
+  assign where host.zone == "satellite" && host.address
+}
+```
+
+```sh
+root@agent:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.conf
+
+object CheckCommand "mem" {
+        command = [ PluginDir + "/check_mem.pl", "-w 20", "-c 10" ]
+}
+
+object CheckCommand "cpu" {
+        command = [ PluginDir + "/check_cpu", "-w 20", "-c 10" ]
+}
+```
+
+
+
+
+
 
 
 

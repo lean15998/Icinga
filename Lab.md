@@ -16,6 +16,8 @@
                        
 ## 1. Thiết lập trên node master 
 
+- Chạy `winzard node`
+
 ```sh
 root@quynv:~# icinga2 node wizard
 Welcome to the Icinga 2 Setup Wizard!
@@ -50,6 +52,8 @@ Done.
 Now restart your Icinga 2 daemon to finish the installation!
 ```
 
+- Tạo ticket client cho node satellite và agent
+
 ```sh
 root@quynv:~# icinga2 pki ticket --cn "satellite"
 78d86f2e08e3f84f653f3b769d6181f114245ff0
@@ -62,6 +66,8 @@ root@quynv:~# systemctl restart icinga2.service
 
 
 ## 2. Thiết lập trên node satellite
+
+- Chạy `wizard node`
 
 ```sh
 root@satellite:~# systemctl restart icinga2
@@ -130,6 +136,8 @@ root@satellite:~# systemctl restart icinga2.service
 
 
 ## 3. Thiết lập trên node agent
+
+- Chạy `wizard node`
 
 ```sh
 root@agent:~# icinga2 node wizard
@@ -206,7 +214,7 @@ object ApiListener "api" {
 
 ## Tạo file cấu hình
 
-
+- Thêm cấu hình endpoint và zone của node `satellite`
 
 ```sh
 root@quynv:~# vim /etc/icinga2/zones.conf
@@ -239,18 +247,12 @@ object Endpoint "satellite" {
 
 ```
 
+- Tạo thư mục cho zone satellite và tạo file cấu hình zone cho node `agent`
+
+
 ```sh
 root@quynv:~# mkdir -p /etc/icinga2/zones.d/satellite
 root@quynv:~# cd /etc/icinga2/zones.d/satellite/
-root@quynv:/etc/icinga2/zones.d/satellite# vim hosts.conf
-
-object Host "agent" {
-  check_command = "hostalive"
-  address = "10.0.0.53"
-  vars.agent_endpoint = name
-}
-```
-```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim agent.conf
 object Zone "agent" {
   endpoints = [ "agent" ]
@@ -262,6 +264,20 @@ object Endpoint "agent" {
   log_duration = 0 // Disable the replay log for command endpoint agents
 }
 ```
+
+- Tạo file cấu hình host cho node `agent`
+
+```sh
+root@quynv:/etc/icinga2/zones.d/satellite# vim hosts.conf
+
+object Host "agent" {
+  check_command = "hostalive"
+  address = "10.0.0.53"
+  vars.agent_endpoint = name
+}
+```
+
+- Tạo file cấu hình dịch vụ cho node `agent`
 
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim service.conf
@@ -291,19 +307,36 @@ apply Service "Cpu" {
   assign where host.zone == "satellite" && host.address
 }
 ```
+- Kiểm tra cấu hình và restart dịch vụ
 
 ```sh
-root@agent:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.conf
-
-object CheckCommand "mem" {
-        command = [ PluginDir + "/check_mem.pl", "-w 20", "-c 10" ]
-}
-
-object CheckCommand "cpu" {
-        command = [ PluginDir + "/check_cpu", "-w 20", "-c 10" ]
-}
+root@quynv:/etc/icinga2/zones.d/satellite# icinga2 daemon -C
+[2022-02-23 08:42:36 +0000] information/cli: Icinga application loader (version: r2.13.2-1)
+[2022-02-23 08:42:36 +0000] information/cli: Loading configuration file(s).
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Committing config item(s).
+[2022-02-23 08:42:36 +0000] information/ApiListener: My API identity: quynv
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 1 IcingaApplication.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 1 Host.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 1 FileLogger.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 1 CheckerComponent.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 1 ApiListener.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 1 IdoMysqlConnection.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 5 Zones.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 3 Endpoints.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 2 ApiUsers.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 245 CheckCommands.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 1 NotificationComponent.
+[2022-02-23 08:42:36 +0000] information/ConfigItem: Instantiated 3 Services.
+[2022-02-23 08:42:36 +0000] information/ScriptGlobal: Dumping variables to file '/var/cache/icinga2/icinga2.vars'
+[2022-02-23 08:42:36 +0000] information/cli: Finished validating the configuration file(s).
+root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 ```
 
+- Kiểm tra trên Dashboard
+
+
+
+<img src = "https://github.com/lean15998/Icinga/blob/main/image/5.01.PNG">
 
 
 

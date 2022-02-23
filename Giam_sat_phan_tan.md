@@ -214,7 +214,7 @@ object ApiUser "client-pki-ticket" {
   permissions = [ "actions/generate-ticket" ]
 }
 
-[root@icinga2-master1 /]# systemctl restart icinga2
+[root@master1 /]# systemctl restart icinga2
 
 Retrieve the ticket on the master node `icinga2-master1.localdomain` with `curl`, for example:
 
@@ -300,7 +300,244 @@ Retrieve the ticket on the master node `icinga2-master1.localdomain` with `curl`
       
       
       
-      
-      
+ # Chế độ cấu hình
+    
+ ### Top Down Command Endpoint
+    
+- Chế độ này nút Icinga2 thực hiện các lệnh từ xa trên một endpoint được chỉ định. Cấu hình đối tượng host / service được đặt trên master/satellite và agent chỉ cần các định nghĩa CheckCommand object có sẵn.
 
+- Mỗi endpoint đều có check queue từ xa của riêng nó. Số lượng kiểm tra được thực hiện đồng thời có thể bị giới hạn trên endpoint với hằng số `MaxConcurrentChecks` được xác định trong file  `constants.conf` . Icinga 2 có thể hủy yêu cầu kiểm tra nếu check queue từ xa đã đầy.
 
+<img src = "">
+
+- Ưu điểm:
+<ul>
+  <ul>
+  <li> Không cần xác định kiểm tra cục bộ trên nút con (agent).
+  <li> Thực thi kiểm tra từ xa có dung lượng nhẹ (sự kiện không đồng bộ).
+  <li> Không cần nhật ký phát lại cho nút con.
+  <li> Ghim kiểm tra các endpoint cụ thể (nếu vùng con bao gồm 2 endpoint).
+  </ul>
+</ul>
+    
+- Nhược điểm:
+<ul>
+  <ul>
+  <li> Nếu nút con không được kết nối, không có kiểm tra nào được thực hiện nữa.
+  <li> Yêu cầu thuộc tính cấu hình bổ sung được chỉ định trong các đối tượng host / service.
+  <li> Yêu cầu cấu hình CheckCommand đối tượng cục bộ. Cách tốt nhất là sử dụng global zone.
+  </ul>
+</ul>
+    
+- Để đảm bảo rằng tất cả các node có liên quan sẽ chấp nhận cấu hình và/hoặc lệnh, bạn cần phải định cấu hình phân cấp Zone và Endpoint trên tất cả các node.
+
+    VD:
+    <ul>
+  <ul>
+  <li> master1 là cấu hình master trong trường hợp này.
+  <li> agent1 hoạt động như một agent nhận thông báo thực thi lệnh thông qua endpoint từ master. Ngoài ra, nó nhận cấu hình global check command từ master.
+  </ul>
+</ul>
+    
+- Ví dụ về cấu hình endpoint
+    
+```sh
+[root@agent1 /]# vim /etc/icinga2/zones.conf
+
+object Endpoint "master1" {
+  host = "192.168.56.101"
+}
+
+object Endpoint "agent1" {
+  host = "192.168.56.111"
+  log_duration = 0 // Disable the replay log for command endpoint agents
+}
+```
+      
+- Xác định hai zone 
+    
+ ```sh
+    [root@agent1 /]# vim /etc/icinga2/zones.conf
+
+object Zone "master" {
+  endpoints = [ "master1" ] //array with endpoint names
+}
+
+object Zone "agent1" {
+  endpoints = [ "agent1" ]
+
+  parent = "master" //establish zone hierarchy
+}
+ ```
+- Không cần bất kỳ cấu hình cục bộ nào trên agent ngoại trừ các định nghĩa CheckCommand có thể được đồng bộ hóa bằng cách sử dụng global zone. Do đó, hãy vô hiệu hóa việc đưa thư mục `conf.d` vào `/etc/icinga2/icinga2.conf`.
+
+ ```sh
+    [root@agent1 /]# vim /etc/icinga2/icinga2.conf
+
+// Commented out, not required on an agent as command endpoint
+//include_recursive "conf.d"
+ ```
+    
+- Xác thực cấu hình và khởi động lại daemon icinga2 trên cả 2 nút    
+    
+    ```sh
+[root@agent1 /]# icinga2 daemon -C
+[root@agent1 /]# systemctl restart icinga2
+
+[root@master1 /]# icinga2 daemon -C
+[root@master1 /]# systemctl restart icinga2
+    ```
+ 
+- Thực hiện cấu hình kiểm tra từ xa agent bằng cách sử dụng endpoint
+    
+    ```sh
+[root@master1 /]# mkdir -p /etc/icinga2/zones.d/master
+[root@master1/]# cd /etc/icinga2/zones.d/master
+[root@master1 /etc/icinga2/zones.d/master]# vim hosts.conf
+
+object Host "agent1" {
+  check_command = "hostalive" //check is executed on the master
+  address = "192.168.56.111"
+
+  vars.agent_endpoint = name //follows the convention that host name == endpoint name
+}
+    
+[root@master1 /etc/icinga2/zones.d/master]# vim services.conf
+
+apply Service "disk" {
+  check_command = "disk"
+
+  // Specify the remote agent as command execution endpoint, fetch the host custom variable
+  command_endpoint = host.vars.agent_endpoint
+
+  // Only assign where a host is marked as agent endpoint
+  assign where host.vars.agent_endpoint
+}    
+```
+- Nếu có tự tạo Checkcommand hãy để nó vào global zone
+
+ ```sh 
+[root@master1 /]# mkdir -p /etc/icinga2/zones.d/global-templates
+[root@master1 /]# vim /etc/icinga2/zones.d/global-templates/commands.conf
+
+object CheckCommand "my-cmd" {
+  //...
+}
+ ```
+    
+- Các bước sẽ xảy ra:
+<ul>
+  <ul>
+<li> Icinga 2 xác nhận cấu hình trên master1 và khởi động lại.
+<li> Node master1 lên lịch và thực hiện check.
+<li> Node agent1 nhận sự kiện lệnh thực thi với các command parameter.
+<li> Node agent1 ánh xạ các parameter command tới local check command, thực hiện check cục bộ và gửi lại thông báo kết quả check.
+  </ul>
+    </ul>
+    
+  - Có thể thấy, không yêu cầu tương tác từ phía master trên agent và không cần thiết phải tải lại dịch vụ Icinga 2 trên agent.
+  
+    
+    ### Top Down Config Sync
+    
+- Đồng bộ hóa các tệp cấu hình đối tượng trong các vùng được chỉ định. Nó rất hữu ích nếu bạn muốn định cấu hình mọi thứ trên nút master và đồng bộ hóa các satellite check (disk, memory, v.v.). Các satellite chạy  local schedule của riêng chúng và sẽ gửi lại thông báo kết quả kiểm tra cho master.
+    
+- Ưu điểm:
+<ul>
+  <ul>
+  <li> Đồng bộ các tệp cấu hình từ zone parent sang zone child.
+  <li> Không cần khởi động lại thủ công trên các node child vì quá trình đồng bộ hóa, xác thực và khởi động lại diễn ra tự động.
+  <li> Thực thi kiểm tra trực tiếp trên bộ lập lịch của node child.
+  <li> Relay log nếu kết nối bị gián đoạn (quan trọng để giữ lịch sử kiểm tra được đồng bộ, ví dụ: đối với báo cáo SLA).
+  <li> Sử dụng global zone để đồng bộ hóa các template, group, v.v.
+  </ul>
+    </ul>
+    
+- Nhược điểm:
+
+    <ul>
+      <ul>
+<li> Yêu cầu một thư mục cấu hình trên nút master với tên của zone bên dưới /etc/icinga2/zones.d.
+<li> Cần cấu hình bổ sung zone và endpoint.
+<li> Relay log được sao chép khi kết nối lại sau khi mất kết nối. Điều này có thể làm tăng việc truyền dữ liệu và tạo ra tình trạng quá tải trên kết nối.   
+      </ul>
+    </ul>
+    
+- Để đảm bảo rằng tất cả các nút có liên quan đều chấp nhận cấu hình và lệnh, bạn cần phải định cấu hình phân cấp Zone và Endpoint trên tất cả các nút.
+
+- Bao gồm cấu hình endpoint và zone trên cả hai nút trong tệp `/etc/icinga2/zones.conf`.
+    
+```sh
+[root@satellite1 /]# vim /etc/icinga2/zones.conf
+
+object Endpoint "master1" {
+  host = "192.168.56.101"
+}
+
+object Endpoint "satellite1" {
+  host = "192.168.56.105"
+}
+```
+    
+```sh
+[root@agent2 /]# vim /etc/icinga2/zones.conf
+
+object Zone "master" {
+  endpoints = [ "master1" ] //array with endpoint names
+}
+
+object Zone "satellite" {
+  endpoints = [ "satellite1" ]
+
+  parent = "master" //establish zone hierarchy
+}
+```
+    
+ - Chỉnh sửa đối tượng địa lý trên agent satellite1 trong  tệp `/etc/icinga2/features-enabled/api.conf` và đặt accept_config thành true.
+    
+  ```sh
+[root@satellite1 /]# vim /etc/icinga2/features-enabled/api.conf
+
+object ApiListener "api" {
+   //...
+   accept_config = true
+}
+```
+
+- Thực hiện kiểm tra cục bộ trên agent bằng cách sử dụng đồng bộ cấu hình.Theo quy ước, một đối tượng máy chủ master/satellite/agent phải sử dụng cùng tên với đối tượng endpoint.Có thể thêm nhiều host thực hiện kiểm tra các service/agent từ xa thông qua command endpoint check .
+    
+ ```sh
+ [root@master1 /]# mkdir -p /etc/icinga2/zones.d/satellite
+[root@master1 /]# cd /etc/icinga2/zones.d/satellite
+
+[root@master1 /etc/icinga2/zones.d/satellite]# vim hosts.conf
+
+object Host "satellite1" {
+  check_command = "hostalive"
+  address = "192.168.56.112"
+  zone = "master" //optional trick: sync the required host object to the satellite, but enforce the "master" zone to execute the check
+}
+```
+
+- Giám sát disk của agent
+    
+```sh
+[root@master1 /etc/icinga2/zones.d/satellite]# vim services.conf
+
+object Service "disk" {
+  host_name = "icinga2-satellite1.localdomain"
+
+  check_command = "disk"
+}    
+```
+
+- Các bước sẽ xảy ra:
+<ul>
+  <ul>
+  <li> Icinga 2 xác nhận cấu hình trên master1.
+  <li> Icinga 2 sao chép cấu hình vào kho lưu trữ cấu hình vùng của nó `/var/lib/icinga2/api/zones`.
+  <li> Nút master1 gửi một sự kiện cập nhật cấu hình đến tất cả các endpoint trong cùng một child zone.
+  <li> Nút satellite1 chấp nhận cấu hình và điền vào kho lưu trữ cấu hình vùng cục bộ với các tệp cấu hình đã nhận.
+  <li> Nút satellite1 xác nhận cấu hình và tự động khởi động lại.    
+  </ul>
+    </ul>

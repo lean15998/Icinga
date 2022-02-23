@@ -373,7 +373,7 @@ object Zone "agent1" {
 - Không cần bất kỳ cấu hình cục bộ nào trên agent ngoại trừ các định nghĩa CheckCommand có thể được đồng bộ hóa bằng cách sử dụng global zone. Do đó, hãy vô hiệu hóa việc đưa thư mục `conf.d` vào `/etc/icinga2/icinga2.conf`.
 
  ```sh
-    [root@agent1 /]# vim /etc/icinga2/icinga2.conf
+ [root@agent1 /]# vim /etc/icinga2/icinga2.conf
 
 // Commented out, not required on an agent as command endpoint
 //include_recursive "conf.d"
@@ -381,17 +381,17 @@ object Zone "agent1" {
     
 - Xác thực cấu hình và khởi động lại daemon icinga2 trên cả 2 nút    
     
-    ```sh
+ ```sh
 [root@agent1 /]# icinga2 daemon -C
 [root@agent1 /]# systemctl restart icinga2
 
 [root@master1 /]# icinga2 daemon -C
 [root@master1 /]# systemctl restart icinga2
-    ```
+```
  
 - Thực hiện cấu hình kiểm tra từ xa agent bằng cách sử dụng endpoint
     
-    ```sh
+ ```sh
 [root@master1 /]# mkdir -p /etc/icinga2/zones.d/master
 [root@master1/]# cd /etc/icinga2/zones.d/master
 [root@master1 /etc/icinga2/zones.d/master]# vim hosts.conf
@@ -436,10 +436,10 @@ object CheckCommand "my-cmd" {
   </ul>
     </ul>
     
-  - Có thể thấy, không yêu cầu tương tác từ phía master trên agent và không cần thiết phải tải lại dịch vụ Icinga 2 trên agent.
+ - Có thể thấy, không yêu cầu tương tác từ phía master trên agent và không cần thiết phải tải lại dịch vụ Icinga 2 trên agent.
   
     
-    ### Top Down Config Sync
+ ### Top Down Config Sync
     
 - Đồng bộ hóa các tệp cấu hình đối tượng trong các vùng được chỉ định. Nó rất hữu ích nếu bạn muốn định cấu hình mọi thứ trên nút master và đồng bộ hóa các satellite check (disk, memory, v.v.). Các satellite chạy  local schedule của riêng chúng và sẽ gửi lại thông báo kết quả kiểm tra cho master.
   

@@ -383,7 +383,7 @@ object User "agent" {
 }
 ```
 
-- Gửi cảnh báo cho host '`agent`
+- Gửi cảnh báo cho host `agent`
 
 ```sh
 object Host "agent" {
@@ -396,11 +396,80 @@ object Host "agent" {
 }
 ```
 
+- Thêm plugin check RAM và CPU
 
+- Tải plugin trên mạng và lưu vào thư mục `/usr/lib/nagios/plugins/`
 
+- Thêm cấu hình Checkcommand
 
+```sh
+root@quynv:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.
 
+object CheckCommand "mem" {
+        command = [ PluginDir + "/check_mem.pl", "-w 20", "-c 10" ]
+}
 
+object CheckCommand "cpu" {
+        command = [ PluginDir + "/check_cpu", "-w 20", "-c 10" ]
+}
 
+}
+```
 
+```sh
+root@agent:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.conf
+object CheckCommand "mem" {
+        command = [ PluginDir + "/check_mem.pl", "-f", "-c 10" , "-w 20" ]
+
+}
+
+object CheckCommand "cpu" {
+        command = [ PluginDir + "/check_cpu", "-c 20" , "-w 10" ]
+
+}
+```
+
+```sh
+root@quynv:~# vim /etc/icinga2/zones.d/satelite/services.conf
+
+/.........
+
+apply Service "Memory" {
+  check_command = "mem"
+  command_endpoint = host.vars.agent_endpoint
+  assign where host.zone == "satelite" && host.address
+}
+
+apply Service "Cpu" {
+  check_command = "cpu"
+  command_endpoint = host.vars.agent_endpoint
+  assign where host.zone == "satelite" && host.address
+}
+
+```
+
+```sh
+root@quynv:~# icinga2 daemon -C
+[2022-02-23 10:13:20 +0000] information/cli: Icinga application loader (version: r2.13.2-1)
+[2022-02-23 10:13:20 +0000] information/cli: Loading configuration file(s).
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Committing config item(s).
+[2022-02-23 10:13:20 +0000] information/ApiListener: My API identity: quynv
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 IcingaApplication.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 Host.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 FileLogger.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 CheckerComponent.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 ApiListener.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 IdoMysqlConnection.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 5 Zones.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 3 Endpoints.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 2 ApiUsers.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 245 CheckCommands.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 NotificationComponent.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 4 Services.
+[2022-02-23 10:13:20 +0000] information/ScriptGlobal: Dumping variables to file '/var/cache/icinga2/icinga2.vars'
+[2022-02-23 10:13:20 +0000] information/cli: Finished validating the configuration file(s).
+root@quynv:~# systemctl restart icinga2.service
+```
+
+<img src = "https://github.com/lean15998/Icinga/blob/main/image/5.02.PNG">
 

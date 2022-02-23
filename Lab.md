@@ -212,7 +212,7 @@ object ApiListener "api" {
 ```
 
 
-## Tạo file cấu hình
+## 4. Cấu hình giám sát node agent trên node master
 
 - Thêm cấu hình endpoint và zone của node `satellite`
 
@@ -334,10 +334,67 @@ root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 
 - Kiểm tra trên Dashboard
 
-
-
 <img src = "https://github.com/lean15998/Icinga/blob/main/image/5.01.PNG">
 
+
+
+## 5. Cảnh báo
+
+- Mở tính năng `notification`
+
+```sh
+root@quynv:~# icinga2 feature list
+Disabled features: command compatlog debuglog elasticsearch gelf graphite icingadb influxdb influxdb2 livestatus opentsdb perfdata statusdata syslog
+Enabled features: api checker ido-mysql mainlog notification
+```
+
+- Cài đặt mailutils và sSMTP
+
+```sh
+root@quynv:~# apt install -y mailutils ssmtp
+```
+
+- Cấu hình ssmtp
+
+```sh
+root@quynv:~# vim /etc/ssmtp/ssmtp.conf
+root=quy15091998@gmail.com
+
+mailhub=smtp.gmail.com:587
+UseSTARTTLS=YES
+AuthUser=quy15091998@gmail.com
+AuthPass=Abc123456789
+rewriteDomain=gmail.com
+hostname=quynv
+FromLineOverride=YES
+```
+
+- Cấu hình gửi cảnh báo cho người dùng `agent`
+
+```sh
+root@quynv:/etc/icinga2/zones.d/satellite# vim user.conf
+
+object User "agent" {
+  display_name = "agent"
+  enable_notifications =true
+  states = [Down, Up, OK, Warning, Unknown]
+  types = [Problem, Recovery]
+  email = "quy15091998@gmail.com"
+}
+```
+
+- Gửi cảnh báo cho host '`agent`
+
+```sh
+object Host "agent" {
+  check_command = "hostalive"
+  address = "10.0.0.53"
+  vars.agent_endpoint = name
+  vars.notification["mail"] = {
+  users = ["agent"]
+}
+}
+```
 
 
 

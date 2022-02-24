@@ -337,7 +337,7 @@ Disabled features: command compatlog debuglog elasticsearch gelf graphite icinga
 Enabled features: api checker ido-mysql mainlog notification
 ```
 
-- Cài đặt mailutils và sSMTP
+- Cài đặt mailutils và sSMTP (Trình gửi mail)
 
 ```sh
 root@quynv:~# apt install -y mailutils ssmtp

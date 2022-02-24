@@ -16,7 +16,7 @@
                        
 ## 1. Thiết lập trên node master 
 
-- Chạy `winzard node`
+- Chạy `wizard node`
 
 ```sh
 root@quynv:~# icinga2 node wizard

@@ -291,7 +291,7 @@ root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 ```
 
 
-
+<img src="https://github.com/lean15998/Icinga/blob/main/image/6.01.PNG">
 
 
 

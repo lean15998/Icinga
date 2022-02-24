@@ -214,7 +214,7 @@ object ApiListener "api" {
 
 ## 4. Cấu hình giám sát node agent trên node master
 
-- Thêm cấu hình endpoint và zone của node `satellite`
+- Thêm thông tin cấu hình endpoint và zone của `satellite`
 
 ```sh
 root@quynv:~# vim /etc/icinga2/zones.conf
@@ -247,7 +247,7 @@ object Endpoint "satellite" {
 
 ```
 
-- Tạo thư mục cho zone satellite và tạo file cấu hình zone cho node `agent`
+- Tạo thư mục satellite và tạo file cấu hình zone cho `agent`
 
 
 ```sh
@@ -265,7 +265,7 @@ object Endpoint "agent" {
 }
 ```
 
-- Tạo file cấu hình host cho node `agent`
+- Tạo file cấu hình host cho `agent`
 
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim hosts.conf
@@ -277,7 +277,7 @@ object Host "agent" {
 }
 ```
 
-- Tạo file cấu hình dịch vụ cho node `agent`
+- Tạo file cấu hình dịch vụ cho  `agent`
 
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim service.conf

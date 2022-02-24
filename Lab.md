@@ -420,6 +420,10 @@ root@quynv:/etc/icinga2/zones.d/satellite# icinga2 daemon -C
 root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 ```
 
+- Trên dashboard
+
+<img src = "https://github.com/lean15998/Icinga/blob/main/image/5.07.PNG" >
+
 - Check mail cảnh báo
 
 <img src = "https://github.com/lean15998/Icinga/blob/main/image/5.04.PNG">

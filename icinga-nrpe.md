@@ -139,7 +139,15 @@ root@satellite:~# systemctl restart icinga2.service
 root@client:~# vim /etc/nagios/nrpe.cfg
 
 /....
-allowed_hosts=127.0.0.1, 10.0.0.52
+allowed_hosts=127.0.0.1, 10.0.0.51, 10.0.0.52
+
+/...
+command[check_users]=/usr/lib/nagios/plugins/check_users -w 5 -c 10
+command[check_load]=/usr/lib/nagios/plugins/check_load -r -w .15,.10,.05 -c .30,.25,.20
+command[check_hda1]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /dev/hda1
+command[check_zombie_procs]=/usr/lib/nagios/plugins/check_procs -w 5 -c 10 -s Z
+command[check_total_procs]=/usr/lib/nagios/plugins/check_procs -w 150 -c 200
+command[check_mem]=/usr/lib/nagios/plugins/check_mem.pl  -f -w 20 -c 10
 
 ```
 
@@ -260,11 +268,20 @@ object Host "agent" {
 ```
 
 ```sh
+root@quynv:/etc/icinga2/zones.d/satellite# vim service.conf
+
 apply Service "nrpe-load" {
   check_command = "nrpe"
   vars.nrpe_command = "check_load"
   assign where host.zone == "satellite" && host.address
 }
+
+apply Service "Memory" {
+  check_command = "nrpe"
+  vars.nrpe_command = "check_mem"
+  assign where host.zone == "satellite" && host.address
+}
+
 ```
 
 ```sh
@@ -291,7 +308,7 @@ root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 ```
 
 
-<img src="https://github.com/lean15998/Icinga/blob/main/image/6.01.PNG">
+<img src="https://github.com/lean15998/Icinga/blob/main/image/6.02.PNG">
 
 
 

@@ -323,7 +323,7 @@ root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 
 - Kiểm tra trên Dashboard
 
-<img src = "https://github.com/lean15998/Icinga/blob/main/image/5.01.PNG">
+<img src = "https://github.com/lean15998/Icinga/blob/main/image/5.06.PNG">
 
 
 

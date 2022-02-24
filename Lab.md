@@ -439,7 +439,34 @@ root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 root@quynv:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.conf
 
 object CheckCommand "mem" {
-        command = [ PluginDir + "/check_mem.pl", "-f", "-w 20", "-c 10" ]
+        command = [ PluginContribDir + "/check_mem.pl" ]
+
+        arguments = {
+                "-u" = {
+                        set_if = "$mem_used$"
+                        description = "Check USED memory"
+                }
+                "-f" = {
+                        set_if = "$mem_free$"
+                        description = "Check FREE memory"
+                }
+                "-C" = {
+                        set_if = "$mem_cache$"
+                        description = "Count OS caches as FREE memory"
+                }
+                "-w" = {
+                        value = "$mem_warning$"
+                        description = "Percent free/used when to warn"
+                }
+                "-c" = {
+                        value = "$mem_critical$"
+                        description = "Percent free/used when critical"
+                }
+        }
+
+        vars.mem_used = false
+        vars.mem_free = true
+        vars.mem_cache = false
 }
 
 ```
@@ -453,7 +480,9 @@ root@quynv:~# vim /etc/icinga2/zones.d/satelite/services.conf
 apply Service "Memory" {
   check_command = "mem"
   command_endpoint = host.vars.agent_endpoint
-  assign where host.zone == "satelite" && host.address
+  vars.mem_critical = 10
+  vars.mem_warning = 20
+  assign where host.zone == "satellite" && host.address
 }
 
 ```

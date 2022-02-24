@@ -431,8 +431,7 @@ root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 
 ## 6.Thêm plugin giám sát
 
-- Tải plugin giám sát tại  và lưu vào thư mục `/usr/lib/nagios/plugins/`
-<a href="https://github.com/justintime/nagios-plugins">đây</a>
+- Tải plugin giám sát tại <a href="https://github.com/justintime/nagios-plugins">đây</a> và lưu vào thư mục `/usr/lib/nagios/plugins/`
 
 - Thêm cấu hình Checkcommand trên node `master`
 

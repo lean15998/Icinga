@@ -365,9 +365,9 @@ root@quynv:/etc/icinga2/zones.d/satellite# vim user.conf
 
 object User "agent" {
   display_name = "agent"
-  enable_notifications =true
-  states = [Down, Up, OK, Warning, Unknown]
-  types = [Problem, Recovery]
+  enable_notifications = true
+  states = [ OK, Warning, Critical, Unknown, Up, Down ]
+  types = [ Problem, Recovery ]
   email = "quy15091998@gmail.com"
 }
 ```
@@ -378,10 +378,10 @@ object User "agent" {
 object Host "agent" {
   check_command = "hostalive"
   address = "10.0.0.53"
-  vars.agent_endpoint = name
   vars.notification["mail"] = {
-  users = ["agent"]
+  users = [ "agent" ]
 }
+  vars.agent_endpoint = name
 }
 ```
 
@@ -431,22 +431,19 @@ root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 
 ## 6.Thêm plugin giám sát
 
-- Tải plugin trên mạng và lưu vào thư mục `/usr/lib/nagios/plugins/`
+- Tải plugin giám sát và lưu vào thư mục `/usr/lib/nagios/plugins/`
+
+https://github.com/justintime/nagios-plugins
 
 - Thêm cấu hình Checkcommand trên node `master`
 
 ```sh
-root@quynv:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.
+root@quynv:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.conf
 
 object CheckCommand "mem" {
-        command = [ PluginDir + "/check_mem.pl", "-w 20", "-c 10" ]
+        command = [ PluginDir + "/check_mem.pl", "-f", "-w 20", "-c 10" ]
 }
 
-object CheckCommand "cpu" {
-        command = [ PluginDir + "/check_cpu", "-w 20", "-c 10" ]
-}
-
-}
 ```
 - Thêm cấu hình service vào file cấu hình
 
@@ -457,12 +454,6 @@ root@quynv:~# vim /etc/icinga2/zones.d/satelite/services.conf
 
 apply Service "Memory" {
   check_command = "mem"
-  command_endpoint = host.vars.agent_endpoint
-  assign where host.zone == "satelite" && host.address
-}
-
-apply Service "Cpu" {
-  check_command = "cpu"
   command_endpoint = host.vars.agent_endpoint
   assign where host.zone == "satelite" && host.address
 }

@@ -295,17 +295,6 @@ apply Service "disk" {
   assign where host.zone == "satellite" && host.address
 }
 
-apply Service "Memory" {
-  check_command = "mem"
-  command_endpoint = host.vars.agent_endpoint
-  assign where host.zone == "satellite" && host.address
-}
-
-apply Service "Cpu" {
-  check_command = "cpu"
-  command_endpoint = host.vars.agent_endpoint
-  assign where host.zone == "satellite" && host.address
-}
 ```
 - Kiểm tra cấu hình và restart dịch vụ
 
@@ -396,6 +385,46 @@ object Host "agent" {
 }
 ```
 
+- Kiểm tra cấu hình và khởi động lại dịch vụ
+
+```sh
+root@quynv:/etc/icinga2/zones.d/satellite# icinga2 daemon -C
+[2022-02-24 01:32:40 +0000] information/cli: Icinga application loader (version: r2.13.2-1)
+[2022-02-24 01:32:40 +0000] information/cli: Loading configuration file(s).
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Committing config item(s).
+[2022-02-24 01:32:40 +0000] information/ApiListener: My API identity: quynv
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 16 Notifications.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 1 IcingaApplication.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 2 HostGroups.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 2 NotificationCommands.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 2 Hosts.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 1 Downtime.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 1 FileLogger.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 1 CheckerComponent.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 1 ApiListener.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 1 IdoMysqlConnection.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 5 Zones.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 3 Endpoints.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 2 ApiUsers.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 245 CheckCommands.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 1 NotificationComponent.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 1 UserGroup.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 2 Users.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 3 TimePeriods.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 3 ServiceGroups.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 1 ScheduledDowntime.
+[2022-02-24 01:32:40 +0000] information/ConfigItem: Instantiated 14 Services.
+[2022-02-24 01:32:40 +0000] information/ScriptGlobal: Dumping variables to file '/var/cache/icinga2/icinga2.vars'
+[2022-02-24 01:32:40 +0000] information/cli: Finished validating the configuration file(s).
+
+root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
+```
+
+- Check mail cảnh báo
+
+<img src = "https://github.com/lean15998/Icinga/blob/main/image/5.04.PNG">
+
+
 ## 6.Thêm plugin giám sát
 
 - Tải plugin trên mạng và lưu vào thư mục `/usr/lib/nagios/plugins/`
@@ -463,5 +492,5 @@ root@quynv:~# systemctl restart icinga2.service
 
 - Kiểm tra trên dashboard
 
-<img src = "https://github.com/lean15998/Icinga/blob/main/image/5.02.PNG">
+<img src = "https://github.com/lean15998/Icinga/blob/main/image/5.05.PNG">
 

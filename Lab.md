@@ -326,8 +326,94 @@ root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 <img src = "https://github.com/lean15998/Icinga/blob/main/image/5.06.PNG">
 
 
+## 5.Thêm plugin giám sát
 
-## 5. Cảnh báo
+- Tải plugin giám sát RAM tại <a href="https://github.com/justintime/nagios-plugins">đây</a> và lưu vào thư mục `/usr/lib/nagios/plugins/`
+
+- Thêm cấu hình Checkcommand trên node `master`
+
+```sh
+root@quynv:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.conf
+
+object CheckCommand "mem" {
+        command = [ PluginContribDir + "/check_mem.pl" ]
+
+        arguments = {
+                "-u" = {
+                        set_if = "$mem_used$"
+                        description = "Check USED memory"
+                }
+                "-f" = {
+                        set_if = "$mem_free$"
+                        description = "Check FREE memory"
+                }
+                "-C" = {
+                        set_if = "$mem_cache$"
+                        description = "Count OS caches as FREE memory"
+                }
+                "-w" = {
+                        value = "$mem_warning$"
+                        description = "Percent free/used when to warn"
+                }
+                "-c" = {
+                        value = "$mem_critical$"
+                        description = "Percent free/used when critical"
+                }
+        }
+
+        vars.mem_used = false
+        vars.mem_free = true
+        vars.mem_cache = false
+}
+
+```
+- Thêm cấu hình service vào file cấu hình
+
+```sh
+root@quynv:~# vim /etc/icinga2/zones.d/satelite/services.conf
+
+/.........
+
+apply Service "Memory" {
+  check_command = "mem"
+  command_endpoint = host.vars.agent_endpoint
+  vars.mem_critical = 10
+  vars.mem_warning = 20
+  assign where host.zone == "satellite" && host.address
+}
+
+```
+
+- Kiểm tra cấu hình và khởi động lại icinga2
+
+```sh
+root@quynv:~# icinga2 daemon -C
+[2022-02-23 10:13:20 +0000] information/cli: Icinga application loader (version: r2.13.2-1)
+[2022-02-23 10:13:20 +0000] information/cli: Loading configuration file(s).
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Committing config item(s).
+[2022-02-23 10:13:20 +0000] information/ApiListener: My API identity: quynv
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 IcingaApplication.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 Host.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 FileLogger.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 CheckerComponent.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 ApiListener.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 IdoMysqlConnection.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 5 Zones.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 3 Endpoints.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 2 ApiUsers.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 245 CheckCommands.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 NotificationComponent.
+[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 4 Services.
+[2022-02-23 10:13:20 +0000] information/ScriptGlobal: Dumping variables to file '/var/cache/icinga2/icinga2.vars'
+[2022-02-23 10:13:20 +0000] information/cli: Finished validating the configuration file(s).
+root@quynv:~# systemctl restart icinga2.service
+```
+
+- Kiểm tra trên dashboard
+
+<img src = "https://github.com/lean15998/Icinga/blob/main/image/5.05.PNG">
+
+## 6. Cảnh báo
 
 - Mở tính năng `notification`
 
@@ -428,91 +514,4 @@ root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 
 <img src = "https://github.com/lean15998/Icinga/blob/main/image/5.04.PNG">
 
-
-## 6.Thêm plugin giám sát
-
-- Tải plugin giám sát RAM tại <a href="https://github.com/justintime/nagios-plugins">đây</a> và lưu vào thư mục `/usr/lib/nagios/plugins/`
-
-- Thêm cấu hình Checkcommand trên node `master`
-
-```sh
-root@quynv:~# vim /usr/share/icinga2/include/plugins-contrib.d/operating-system.conf
-
-object CheckCommand "mem" {
-        command = [ PluginContribDir + "/check_mem.pl" ]
-
-        arguments = {
-                "-u" = {
-                        set_if = "$mem_used$"
-                        description = "Check USED memory"
-                }
-                "-f" = {
-                        set_if = "$mem_free$"
-                        description = "Check FREE memory"
-                }
-                "-C" = {
-                        set_if = "$mem_cache$"
-                        description = "Count OS caches as FREE memory"
-                }
-                "-w" = {
-                        value = "$mem_warning$"
-                        description = "Percent free/used when to warn"
-                }
-                "-c" = {
-                        value = "$mem_critical$"
-                        description = "Percent free/used when critical"
-                }
-        }
-
-        vars.mem_used = false
-        vars.mem_free = true
-        vars.mem_cache = false
-}
-
-```
-- Thêm cấu hình service vào file cấu hình
-
-```sh
-root@quynv:~# vim /etc/icinga2/zones.d/satelite/services.conf
-
-/.........
-
-apply Service "Memory" {
-  check_command = "mem"
-  command_endpoint = host.vars.agent_endpoint
-  vars.mem_critical = 10
-  vars.mem_warning = 20
-  assign where host.zone == "satellite" && host.address
-}
-
-```
-
-- Kiểm tra cấu hình và khởi động lại icinga2
-
-```sh
-root@quynv:~# icinga2 daemon -C
-[2022-02-23 10:13:20 +0000] information/cli: Icinga application loader (version: r2.13.2-1)
-[2022-02-23 10:13:20 +0000] information/cli: Loading configuration file(s).
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Committing config item(s).
-[2022-02-23 10:13:20 +0000] information/ApiListener: My API identity: quynv
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 IcingaApplication.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 Host.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 FileLogger.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 CheckerComponent.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 ApiListener.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 IdoMysqlConnection.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 5 Zones.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 3 Endpoints.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 2 ApiUsers.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 245 CheckCommands.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 1 NotificationComponent.
-[2022-02-23 10:13:20 +0000] information/ConfigItem: Instantiated 4 Services.
-[2022-02-23 10:13:20 +0000] information/ScriptGlobal: Dumping variables to file '/var/cache/icinga2/icinga2.vars'
-[2022-02-23 10:13:20 +0000] information/cli: Finished validating the configuration file(s).
-root@quynv:~# systemctl restart icinga2.service
-```
-
-- Kiểm tra trên dashboard
-
-<img src = "https://github.com/lean15998/Icinga/blob/main/image/5.05.PNG">
 

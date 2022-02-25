@@ -267,7 +267,7 @@ object Host "agent" {
   vars.agent_endpoint = name
 }
 ```
-- Thêm cấu hình dịch vụ cho zone ``satellite`
+- Thêm cấu hình dịch vụ cho zone `satellite`
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim service.conf
 

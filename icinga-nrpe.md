@@ -158,7 +158,7 @@ root@client:~# systemctl restart nagios-nrpe-server.service
 ```
 
 ## 4. Cấu hình giám sát node agent trên node master
-
+- Cấu hình CheckCommand cho `nrpe`
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim /usr/share/icinga2/include/command-plugins.conf
 
@@ -242,6 +242,7 @@ object CheckCommand "nrpe" {
 }
 
 ```
+- Thêm cấu hình của zone `agent`
 
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim agent.conf
@@ -256,7 +257,7 @@ object Endpoint "agent" {
   log_duration = 0 // Disable the replay log for command endpoint agents
 }
 ```
-
+- Thêm cấu hình host `agent`
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim hosts.conf
 
@@ -266,7 +267,7 @@ object Host "agent" {
   vars.agent_endpoint = name
 }
 ```
-
+- Thêm cấu hình dịch vụ cho zone ``satellite`
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim service.conf
 
@@ -283,7 +284,7 @@ apply Service "Memory" {
 }
 
 ```
-
+- Kiểm tra cấu hình và khởi động lại icinga2
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# icinga2 daemon -C
 [2022-02-24 10:21:38 +0000] information/cli: Icinga application loader (version: r2.13.2-1)
@@ -307,6 +308,7 @@ root@quynv:/etc/icinga2/zones.d/satellite# icinga2 daemon -C
 root@quynv:/etc/icinga2/zones.d/satellite# systemctl restart icinga2.service
 ```
 
+- Kiểm tra trên Dashboard
 
 <img src="https://github.com/lean15998/Icinga/blob/main/image/6.02.PNG">
 

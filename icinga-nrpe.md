@@ -198,7 +198,8 @@ object CheckCommand "nrpe" {
                 "-4" = {
                         set_if = "$nrpe_ipv4$"
                         description = "Use IPv4 connection"
-                "-6" = {
+               }
+               "-6" = {
                         set_if = "$nrpe_ipv6$"
                         description = "Use IPv6 connection"
                 }

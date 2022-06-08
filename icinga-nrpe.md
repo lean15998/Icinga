@@ -243,21 +243,7 @@ object CheckCommand "nrpe" {
 }
 
 ```
-- Thêm cấu hình của zone `agent`
 
-```sh
-root@quynv:/etc/icinga2/zones.d/satellite# vim agent.conf
-
-object Zone "agent" {
-  endpoints = [ "agent" ]
-  parent = "satellite"
-}
-
-object Endpoint "agent" {
-  host = "10.0.0.55"
-  log_duration = 0 // Disable the replay log for command endpoint agents
-}
-```
 - Thêm cấu hình host `agent`
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim hosts.conf

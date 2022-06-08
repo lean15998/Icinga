@@ -244,6 +244,21 @@ object CheckCommand "nrpe" {
 
 ```
 
+- C
+
+```sh
+object Zone "satellite" {
+  endpoints = [ "satellite" ]
+  parent = "master"
+}
+
+
+object Endpoint "satellite" {
+  host = "10.0.0.52"
+  log_duration = 0 // Disable the replay log for command endpoint agents
+}
+```
+
 - Thêm cấu hình host `agent`
 ```sh
 root@quynv:/etc/icinga2/zones.d/satellite# vim hosts.conf
